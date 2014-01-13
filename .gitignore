@@ -1,0 +1,4 @@
+.vagrant
+app/tests/lib
+**/test.py
+**/*.pyc
