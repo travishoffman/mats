@@ -9,3 +9,4 @@ apt-get -q -y install python-setuptools
 apt-get -q -y install python-pip
 pip install pymongo
 pip install rauth
+pip install mock

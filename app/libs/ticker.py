@@ -31,7 +31,7 @@ class Ticker:
 		}
 
 	def status_handler(self, resp):
-		if(resp['status'] == 'connected'):
+		if resp['status'] == 'connected':
 			self.logger.info('connected to stream')
 		else:
 			self.logger.info('disconnected from stream')
@@ -66,7 +66,7 @@ class Ticker:
 
 	def stream(self, watchlist_lst):
 		for resp in self.tk.get_stream(watchlist_lst):
-			self.handlers[resp.keys()[0]](resp)				
+			self.handlers[resp.keys()[0]](resp)
 
 	def start(self):
 		global logger
@@ -77,12 +77,10 @@ class Ticker:
 		try:
 			self.stream(watchlist_lst)
 		except httplib.IncompleteRead:
-			self.logger.error('Exception: ' + str(sys.exc_info()[0]) + '. Recursively calling Ticker.start')
-			self.quotes.clear()
-			self.trades.clear()
-			self.start()		
+			self.handle_stream_exception()
 
-t = Ticker()
-t.start()
-
-			
+	def handle_stream_exception(self):
+		self.logger.error('Exception: ' + str(sys.exc_info()[0]) + '. Recursively calling Ticker.start')
+		self.quotes.clear()
+		self.trades.clear()
+		self.start()

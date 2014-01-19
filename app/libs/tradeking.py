@@ -27,7 +27,7 @@ class TradeKing:
 
 	def get_stream(self, symbols):
 		symbols_str = ','.join(symbols)
-		resp = self.sess.get(self.stream_ep, params={'symbols': symbols_str}, 
+		resp = self.sess.get(self.stream_ep, params={'symbols': symbols_str},
 			stream=True)
 
 		json_str = ''
