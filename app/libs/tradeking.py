@@ -23,7 +23,12 @@ class TradeKing:
 	def get_quotes(self, symbols):
 		symbols_str = ','.join(symbols)
 		resp = self.sess.get(self.quote_ep,	params={'symbols': symbols_str})
-		return  json.loads(resp.text)['response']['quotes']['quote']
+		resp_obj = json.loads(resp.text)
+		
+		if not resp_obj['response']['quotes']:
+			return None
+
+		return  resp_obj['response']['quotes']['quote']
 
 	def get_stream(self, symbols):
 		symbols_str = ','.join(symbols)

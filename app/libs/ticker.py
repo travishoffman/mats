@@ -71,6 +71,7 @@ class Ticker:
 	def start(self):
 		global logger
 		watchlist_lst = []
+		self.sanitize_watchlist()
 		for row in self.watchlist.get():
 			watchlist_lst.append(row['symbol'])
 
@@ -84,3 +85,29 @@ class Ticker:
 		self.quotes.clear()
 		self.trades.clear()
 		self.start()
+
+	def sanitize_watchlist(self):
+		self.logger.info('sanitizing watchlist')
+		
+		watchlist_lst = []
+		for row in self.watchlist.get():
+			watchlist_lst.append(row['symbol'])
+		
+		quotes = self.tk.get_quotes(watchlist_lst)
+		if quotes == None:
+			for symbol in watchlist_lst:
+				self.watchlist.remove(symbol)
+
+			return
+
+		for symbol in watchlist_lst:
+			has_symbol = False
+			for quote in quotes:
+				if symbol == quote['symbol']:
+					has_symbol = True
+
+			if not has_symbol:
+				self.watchlist.remove(symbol)
+
+ticker = Ticker()
+ticker.start()

@@ -1,7 +1,7 @@
 from libs.ticker import Ticker
 from libs.quote import Quote
 from libs.trade import Trade
-from mock import Mock, patch, create_autospec
+from mock import Mock, patch, create_autospec, call
 import httplib
 import unittest
 
@@ -126,10 +126,35 @@ class TestTicker(unittest.TestCase):
 		ticker.watchlist.get = Mock(return_value=watchlist_data)
 		ticker.stream = Mock(return_value=0)
 		ticker.handle_stream_exception = Mock(return_value=0)
+		ticker.sanitize_watchlist = Mock()
 
 		ticker.start()
 		ticker.stream.assert_called_with(['AAPL'])
+		self.assertTrue(ticker.sanitize_watchlist.call_count, 1)
 
 		ticker.stream.side_effect = httplib.IncompleteRead('test')
 		ticker.start()
 		self.assertEqual(ticker.handle_stream_exception.call_count, 1)
+
+	def test_sanitize_watchlist(self):
+		ticker = Ticker()
+		
+		ticker.logger.info = Mock()
+		watchlist_data = [
+			{'symbol': 'AAPL'},
+			{'symbol': 'TST'}
+		]
+		quote_data = [
+			{'symbol': 'AAPL'}
+		]
+		ticker.watchlist.get = Mock(return_value=watchlist_data)
+		ticker.watchlist.remove = Mock()
+		ticker.tk.get_quotes = Mock(return_value=None)
+
+		ticker.sanitize_watchlist()
+		self.assertEqual(ticker.watchlist.remove.call_args_list, [call('AAPL'), call('TST')])
+
+		ticker.tk.get_quotes = Mock(return_value=quote_data)
+		ticker.watchlist.remove.reset_mock()
+		ticker.sanitize_watchlist()
+		self.assertEqual(ticker.watchlist.remove.call_args_list, [call('TST')])
