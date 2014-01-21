@@ -79,6 +79,8 @@ class Ticker:
 			self.stream(watchlist_lst)
 		except httplib.IncompleteRead:
 			self.handle_stream_exception()
+		except ssl.SSLError:
+			pass
 
 	def handle_stream_exception(self):
 		self.logger.error('Exception: ' + str(sys.exc_info()[0]) + '. Recursively calling Ticker.start')
