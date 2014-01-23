@@ -2,9 +2,11 @@ from watchlist import WatchList
 from quote import Quote
 from trade import Trade
 from tradeking import TradeKing
+from clock import Clock
 import sys
 import logging
 import httplib
+import ssl
 
 logger = logging.getLogger('mats')
 logger.setLevel(logging.INFO)
@@ -78,12 +80,17 @@ class Ticker:
 		try:
 			self.stream(watchlist_lst)
 		except httplib.IncompleteRead:
+			self.logger.error('Exception: ' + str(sys.exc_info()[0]) + '. Recursively calling Ticker.start')
 			self.handle_stream_exception()
 		except ssl.SSLError:
-			pass
+			clock = Clock()
+			if clock.is_market_open():
+				self.logger.error('Exception: ' + str(sys.exc_info()[0]) + '. Market still open. Recursively calling Ticker.start')
+				self.handle_stream_exception()
+
+			self.logger.error('Exception: ' + str(sys.exc_info()[0]) + '. Market closed. Exiting.')
 
 	def handle_stream_exception(self):
-		self.logger.error('Exception: ' + str(sys.exc_info()[0]) + '. Recursively calling Ticker.start')
 		self.quotes.clear()
 		self.trades.clear()
 		self.start()
@@ -110,6 +117,3 @@ class Ticker:
 
 			if not has_symbol:
 				self.watchlist.remove(symbol)
-
-ticker = Ticker()
-ticker.start()

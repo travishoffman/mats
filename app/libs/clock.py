@@ -48,12 +48,9 @@ class Clock:
 
 		return False
 
-	def is_market_open(self, date=datetime.datetime.now()):
-		if not self.is_holiday(date):
-			if self.is_weekday(date) and self.is_market_hours(date):
+	def is_market_open(self, datetime=datetime.datetime.now()):
+		if not self.is_holiday(datetime.date()):
+			if self.is_weekday(datetime.date()) and self.is_market_hours(datetime):
 				return True
 
 		return False
-
-cl = Clock()
-print cl.is_market_open(datetime.datetime(2014, 1, 22, 14, 29, 0))

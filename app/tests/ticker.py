@@ -121,7 +121,7 @@ class TestTicker(unittest.TestCase):
 
 	def test_start(self):
 		ticker = Ticker()
-
+		ticker.logger = Mock()
 		watchlist_data = [{ 'symbol': 'AAPL' }]
 		ticker.watchlist.get = Mock(return_value=watchlist_data)
 		ticker.stream = Mock(return_value=0)
