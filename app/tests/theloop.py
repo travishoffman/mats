@@ -37,4 +37,4 @@ class TestTheLoop(unittest.TestCase):
 
 			ticker_conn.recv = Mock(return_value=json.dumps({'type': 'event', 'data': 'new_trade'}))
 			theloop.loop()
-			theloop.new_trade_handler.assert_called_once()		
+			theloop.new_trade_handler.assert_called_once()
