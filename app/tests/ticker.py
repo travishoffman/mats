@@ -132,6 +132,8 @@ class TickerTest(unittest.TestCase):
 		ticker.conn = Mock()
 		ticker.conn.send = Mock()
 		ticker.logger = Mock()
+		ticker.clock = Mock()
+		ticker.clock.is_market_open = Mock(return_value=True)
 		watchlist_data = [{ 'symbol': 'AAPL' }]
 		ticker.watchlist.get = Mock(return_value=watchlist_data)
 		ticker.stream = Mock(return_value=0)
@@ -145,6 +147,10 @@ class TickerTest(unittest.TestCase):
 		ticker.stream.side_effect = httplib.IncompleteRead('test')
 		ticker.start()
 		ticker.conn.send.assert_called_with(json.dumps({'type': 'error', 'data': 'incomplete_read'}))
+		
+		ticker.clock.is_market_open = Mock(return_value=False)
+		ticker.start()
+		ticker.conn.send.assert_called_with(json.dumps({'type': 'info', 'data': 'market_closed'}))
 
 	def test_sanitize_watchlist(self):
 		parent, child = Pipe()

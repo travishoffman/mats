@@ -1,10 +1,10 @@
 from libs.theloop import TheLoop
-from mock import Mock, patch, create_autospec, call
+from mock import Mock, patch, call
 from helpers.errorafter import ErrorAfter
 import unittest
 import json
 
-class TestTheLoop(unittest.TestCase):
+class TheLoopTest(unittest.TestCase):
 	def test_loop(self):
 		theloop = TheLoop()
 		ticker_conn = Mock()

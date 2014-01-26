@@ -12,6 +12,7 @@ import json
 class Ticker:
 	def __init__(self, conn):
 		self.logger = logging.getLogger('mats')
+		self.clock = Clock()
 		self.conn = conn
 		self.watchlist = WatchList()
 		self.quotes = {}
@@ -69,6 +70,11 @@ class Ticker:
 			self.handlers[resp.keys()[0]](resp)
 
 	def start(self):
+		if not self.clock.is_market_open():
+			self.logger.info('ticker: market is closed. exiting.')
+			self.conn.send(json.dumps({'type': 'info', 'data': 'market_closed'}))			
+			return
+
 		watchlist_lst = []
 		self.sanitize_watchlist()
 		for row in self.watchlist.get():
@@ -79,13 +85,7 @@ class Ticker:
 		except httplib.IncompleteRead:
 			self.conn.send(json.dumps({'type': 'error', 'data': 'incomplete_read'}))
 		except ssl.SSLError:
-			clock = Clock()
-			if clock.is_market_open():
-				self.conn.send(json.dumps({'type': 'error', 'data': 'ssl_error'}))
-
-	def wipe_data(self):
-		self.quotes.clear()
-		self.trades.clear()
+			self.conn.send(json.dumps({'type': 'error', 'data': 'ssl_error'}))
 
 	def handle_stream_exception(self):
 		self.quotes.clear()

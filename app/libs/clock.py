@@ -5,7 +5,6 @@ from pytz import timezone
 
 class Clock:
 	def __init__(self):
-		self.tz = timezone('US/Eastern')
 		self.market_holidays = [
 			datetime.date(2014, 1, 1),
 			datetime.date(2014, 1, 20),
@@ -61,3 +60,7 @@ class Clock:
 			return dt
 
 		return self.next_market_open(dt)
+
+	def secs_until_open(self, dt=datetime.datetime.now()):
+		diff = self.next_market_open(dt) - dt
+		return diff.seconds
