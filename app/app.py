@@ -1,12 +1,13 @@
+from libs.theloop import TheLoop
 from multiprocessing import Process, Pipe
+import logging
 
-def p2(conn):
-	while True:
-		conn.send('up and running')
+logger = logging.getLogger('mats')
+logger.setLevel(logging.DEBUG)
+ch = logging.StreamHandler()
+ch.setFormatter(logging.Formatter('%(levelname)s %(asctime)s %(message)s'))
+logger.addHandler(ch)
 
-parent, child = Pipe()
-p = Process(target=p2, args=(child,))
-p.start()
+theloop = TheLoop()
+theloop.loop()
 
-while True:
-	print parent.recv()

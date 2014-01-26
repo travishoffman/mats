@@ -7,16 +7,12 @@ import sys
 import logging
 import httplib
 import ssl
-
-logger = logging.getLogger('mats')
-logger.setLevel(logging.INFO)
-ch = logging.StreamHandler()
-ch.setLevel(logging.DEBUG)
-logger.addHandler(ch)
+import json
 
 class Ticker:
-	def __init__(self):
+	def __init__(self, conn):
 		self.logger = logging.getLogger('mats')
+		self.conn = conn
 		self.watchlist = WatchList()
 		self.quotes = {}
 		self.trades = {}
@@ -34,9 +30,9 @@ class Ticker:
 
 	def status_handler(self, resp):
 		if resp['status'] == 'connected':
-			self.logger.info('connected to stream')
+			self.conn.send(json.dumps({'type': 'event', 'data': 'connected'}))
 		else:
-			self.logger.info('disconnected from stream')
+			self.conn.send(json.dumps({'type': 'event', 'data': 'disconnected'}))
 
 	def quote_handler(self, resp):
 		symbol = resp['quote']['symbol']
@@ -51,6 +47,7 @@ class Ticker:
 
 		q.save()
 		self.quotes[symbol] = q
+		self.conn.send(json.dumps({'type': 'event', 'data': 'new_quote'}))
 
 	def trade_handler(self, resp):
 		symbol = resp['trade']['symbol']
@@ -65,13 +62,13 @@ class Ticker:
 
 		t.save()
 		self.trades[symbol] = t
+		self.conn.send(json.dumps({'type': 'event', 'data': 'new_trade'}))
 
 	def stream(self, watchlist_lst):
 		for resp in self.tk.get_stream(watchlist_lst):
 			self.handlers[resp.keys()[0]](resp)
 
 	def start(self):
-		global logger
 		watchlist_lst = []
 		self.sanitize_watchlist()
 		for row in self.watchlist.get():
@@ -80,15 +77,15 @@ class Ticker:
 		try:
 			self.stream(watchlist_lst)
 		except httplib.IncompleteRead:
-			self.logger.error('Exception: ' + str(sys.exc_info()[0]) + '. Recursively calling Ticker.start')
-			self.handle_stream_exception()
+			self.conn.send(json.dumps({'type': 'error', 'data': 'incomplete_read'}))
 		except ssl.SSLError:
 			clock = Clock()
 			if clock.is_market_open():
-				self.logger.error('Exception: ' + str(sys.exc_info()[0]) + '. Market still open. Recursively calling Ticker.start')
-				self.handle_stream_exception()
+				self.conn.send(json.dumps({'type': 'error', 'data': 'ssl_error'}))
 
-			self.logger.error('Exception: ' + str(sys.exc_info()[0]) + '. Market closed. Exiting.')
+	def wipe_data(self):
+		self.quotes.clear()
+		self.trades.clear()
 
 	def handle_stream_exception(self):
 		self.quotes.clear()
@@ -96,7 +93,7 @@ class Ticker:
 		self.start()
 
 	def sanitize_watchlist(self):
-		self.logger.info('sanitizing watchlist')
+		self.logger.info('ticker: sanitizing watchlist')
 		
 		watchlist_lst = []
 		for row in self.watchlist.get():

@@ -1,2 +1,2 @@
 #!/bin/bash
-python -m unittest ticker stream_data clock
+python -m unittest clock stream_data theloop ticker

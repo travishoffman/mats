@@ -2,25 +2,31 @@ from libs.ticker import Ticker
 from libs.quote import Quote
 from libs.trade import Trade
 from mock import Mock, patch, create_autospec, call
+from multiprocessing import Process, Pipe
 import httplib
 import unittest
+import json
 
-class TestTicker(unittest.TestCase):
+class TickerTest(unittest.TestCase):
 	def test_status_handler(self):
-		ticker = Ticker()
+		parent, child = Pipe()
+		ticker = Ticker(child)
+		ticker.conn = Mock()
+		ticker.conn.send = Mock()
 		ticker.logger.info = Mock()
 		
 		data = {'status': 'connected'}
 		ticker.status_handler(data)
-		ticker.logger.info.assert_called_with('connected to stream')
+		ticker.conn.send.assert_called_with(json.dumps({'type': 'event', 'data': 'connected'}))
 
 		data = {'status': 'disconnected'}
 		ticker.status_handler(data)		
-		ticker.logger.info.assert_called_with('disconnected from stream')
+		ticker.conn.send.assert_called_with(json.dumps({'type': 'event', 'data': 'disconnected'}))
 
 	@patch('libs.ticker.Quote')
 	def test_quote_handler(self, mock):
-		ticker = Ticker()
+		parent, child = Pipe()
+		ticker = Ticker(child)
 		
 		data1 = {
 			'quote': {
@@ -62,7 +68,8 @@ class TestTicker(unittest.TestCase):
 
 	@patch('libs.ticker.Trade')
 	def test_trade_handler(self, mock):
-		ticker = Ticker()
+		parent, child = Pipe()
+		ticker = Ticker(child)
 		
 		data1 = {
 			u'trade': {
@@ -120,7 +127,10 @@ class TestTicker(unittest.TestCase):
 		self.assertEqual(mock_trade.merge.call_count, 2)
 
 	def test_start(self):
-		ticker = Ticker()
+		parent, child = Pipe()
+		ticker = Ticker(child)
+		ticker.conn = Mock()
+		ticker.conn.send = Mock()
 		ticker.logger = Mock()
 		watchlist_data = [{ 'symbol': 'AAPL' }]
 		ticker.watchlist.get = Mock(return_value=watchlist_data)
@@ -134,10 +144,11 @@ class TestTicker(unittest.TestCase):
 
 		ticker.stream.side_effect = httplib.IncompleteRead('test')
 		ticker.start()
-		self.assertEqual(ticker.handle_stream_exception.call_count, 1)
+		ticker.conn.send.assert_called_with(json.dumps({'type': 'error', 'data': 'incomplete_read'}))
 
 	def test_sanitize_watchlist(self):
-		ticker = Ticker()
+		parent, child = Pipe()
+		ticker = Ticker(child)
 		
 		ticker.logger.info = Mock()
 		watchlist_data = [
