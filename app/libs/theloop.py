@@ -17,7 +17,8 @@ class TheLoop:
 			'connected': self.connected_handler,
 			'market_closed': self.market_closed_handler,
 			'new_quote': self.new_quote_handler,
-			'new_trade': self.new_trade_handler
+			'new_trade': self.new_trade_handler,
+			'empty_watchlist': self.empty_watchlist_handler
 		}
 
 	def loop(self):
@@ -80,3 +81,7 @@ class TheLoop:
 
 	def new_trade_handler(self):
 		self.logger.debug('theloop: ticker reports new trade')
+
+	def empty_watchlist_handler(self):
+		self.logger.info('theloop: exiting.')
+		exit(0)	

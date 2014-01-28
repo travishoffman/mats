@@ -70,16 +70,20 @@ class Ticker:
 			self.handlers[resp.keys()[0]](resp)
 
 	def start(self):
-		if not self.clock.is_market_open():
-			self.logger.info('ticker: market is closed. exiting.')
-			self.conn.send(json.dumps({'type': 'info', 'data': 'market_closed'}))			
-			return
-
 		watchlist_lst = []
 		self.sanitize_watchlist()
 		for row in self.watchlist.get():
 			watchlist_lst.append(row['symbol'])
 
+		if len(watchlist_lst) == 0:
+			self.logger.info('ticker: watchlist is empty. exiting.')
+			self.conn.send(json.dumps({'type': 'error', 'data': 'empty_watchlist'}))
+			return
+
+		if not self.clock.is_market_open():
+			self.logger.info('ticker: market is closed. exiting.')
+			self.conn.send(json.dumps({'type': 'info', 'data': 'market_closed'}))
+			return
 		try:
 			self.stream(watchlist_lst)
 		except httplib.IncompleteRead:
@@ -99,6 +103,9 @@ class Ticker:
 		for row in self.watchlist.get():
 			watchlist_lst.append(row['symbol'])
 		
+		if len(watchlist_lst) == 0:
+			return 
+
 		quotes = self.tk.get_quotes(watchlist_lst)
 		if quotes == None:
 			for symbol in watchlist_lst:
