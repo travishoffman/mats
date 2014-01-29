@@ -8,6 +8,7 @@ import time
 
 class TheLoop:
 	def __init__(self):
+		self.clock = Clock()
 		self.logger = logging.getLogger('mats')
 		self.accepting_new_quote = True
 		self.accepting_new_trade = True
@@ -22,8 +23,22 @@ class TheLoop:
 		}
 
 	def loop(self):
+		ticker_killed = False
 		self.ticker_p, self.ticker_conn = self.launch_ticker()
 		while True:
+			if not self.clock.is_market_open():
+				self.logger.info('theloop: market is closed. killing ticker.')
+				self.ticker_p.terminate()
+				
+				# block until ticker child has time to exit
+				while self.ticker_p.is_alive():
+					pass
+				
+				# now go to sleep
+				self.market_closed_handler()
+				self.logger.info('theloop: market is open. spawning ticker.')
+				self.ticker_p, self.ticker_conn = self.launch_ticker()
+
 			if self.ticker_conn.poll():
 				data = json.loads(self.ticker_conn.recv())
 				self.ticker_handlers[data['data']]()
@@ -38,17 +53,6 @@ class TheLoop:
 		p = Process(target=self.ticker, name='ticker', args=(child,))
 		p.start()
 		return (p, parent)
-
-	# def analyst(self, conn):
-	# 	analyst = Analyst(conn)
-	# 	analyst.start()
-
-	# def launch_analyst(self):
-	# 	self.logger.info('theloop: spawning analyst child process')
-	# 	parent, child = Pipe()
-	# 	p = Process(target=self.analyst, name='analyst', args=(child,))
-	# 	p.start()
-	# 	return (p, parent)
 
 	def incomplete_read_handler(self):
 		self.logger.error('theloop: ticker had incompleteread error, attempting to respawn ticker.')
