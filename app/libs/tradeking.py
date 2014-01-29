@@ -28,9 +28,6 @@ class TradeKing:
 		if not resp_obj['response']['quotes']:
 			return None
 
-		if type(resp_obj['response']['quotes']['quote']) is dict:
-			return [resp_obj['response']['quotes']['quote']]
-
 		return  resp_obj['response']['quotes']['quote']
 
 	def get_stream(self, symbols):

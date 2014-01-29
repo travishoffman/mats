@@ -112,6 +112,8 @@ class Ticker:
 				self.watchlist.remove(symbol)
 
 			return
+		elif type(quotes) is dict:
+			quotes = [quotes]
 
 		for symbol in watchlist_lst:
 			has_symbol = False

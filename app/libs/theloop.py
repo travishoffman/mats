@@ -36,8 +36,6 @@ class TheLoop:
 				
 				# now go to sleep
 				self.market_closed_handler()
-				self.logger.info('theloop: market is open. spawning ticker.')
-				self.ticker_p, self.ticker_conn = self.launch_ticker()
 
 			if self.ticker_conn.poll():
 				data = json.loads(self.ticker_conn.recv())
