@@ -80,10 +80,6 @@ class Ticker:
 			self.conn.send(json.dumps({'type': 'error', 'data': 'empty_watchlist'}))
 			return
 
-		if not self.clock.is_market_open():
-			self.logger.info('ticker: market is closed. exiting.')
-			self.conn.send(json.dumps({'type': 'info', 'data': 'market_closed'}))
-			return
 		try:
 			self.stream(watchlist_lst)
 		except httplib.IncompleteRead:

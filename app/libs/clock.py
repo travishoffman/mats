@@ -26,8 +26,11 @@ class Clock:
 		return False
 
 	def is_market_hours(self, d=datetime.datetime.now()):
-		hour, minute = (d.hour, d.minute)
-		if (hour == 14 and minute >= 30):
+		hour, minute, second = (d.hour, d.minute, d.second)
+		tolerence = 10
+		threshold = 30 - second
+		if hour == 14 and (minute >= 30 or 
+			(minute == 29 and threshold <= tolerence)):
 			return True
 		elif hour > 14 and hour < 21:
 			return True

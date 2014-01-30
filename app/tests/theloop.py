@@ -11,6 +11,7 @@ class TheLoopTest(unittest.TestCase):
 		ticker_conn.poll = Mock(return_value=True)
 		ticker_conn.poll.side_effect = ErrorAfter(2)
 
+		theloop.clock.is_market_open = Mock(return_value=True)
 		theloop.connected_handler = Mock(return_value=True)
 		theloop.launch_ticker = Mock(return_value=(Mock(), ticker_conn))
 		theloop.new_trade_handler = Mock(return_value=True)

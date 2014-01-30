@@ -23,7 +23,6 @@ class TheLoop:
 		}
 
 	def loop(self):
-		ticker_killed = False
 		self.ticker_p, self.ticker_conn = self.launch_ticker()
 		while True:
 			if not self.clock.is_market_open():
@@ -64,22 +63,20 @@ class TheLoop:
 		self.logger.info('theloop: ticker connected to stream')
 
 	def market_closed_handler(self):
-		clock = Clock()
-		secs = clock.secs_until_open()
+		secs = self.clock.secs_until_open()
 		time_slept = time.time()
 
 		self.logger.info('theloop: sleeping for ' + str(secs) + ' seconds.')
 		time.sleep(secs)
 
-		time_woke = time.time()
-		secs_asleep = time_woke - time_slept
+		secs_asleep = time.time() - time_slept
 		self.logger.info('theloop: waking up after ' + str(secs_asleep) + ' seconds')
 		self.logger.info('theloop: attempting to respawn ticker.')
+
 		self.ticker_p, self.ticker_conn = self.launch_ticker()
 
 	def new_quote_handler(self):
 		self.logger.debug('theloop: ticker reports new quote')
-
 
 	def new_trade_handler(self):
 		self.logger.debug('theloop: ticker reports new trade')

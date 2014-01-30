@@ -11,6 +11,8 @@ class ClockTest(unittest.TestCase):
 		at_open = datetime.datetime(2014, 1, 2, 14, 30)
 		before_close = datetime.datetime(2014, 1, 2, 20, 59)
 		at_close = datetime.datetime(2014, 1, 2, 21)
+		seven_secs_before = datetime.datetime(2014, 1, 2, 14, 29, 23)
+		eleven_secs_before = datetime.datetime(2014, 1, 2, 14, 29, 19)
 
 		clock = Clock()
 		self.assertFalse(clock.is_market_open(new_years))
@@ -19,6 +21,8 @@ class ClockTest(unittest.TestCase):
 		self.assertTrue(clock.is_market_open(at_open))
 		self.assertTrue(clock.is_market_open(before_close))
 		self.assertFalse(clock.is_market_open(at_close))
+		self.assertTrue(clock.is_market_open(seven_secs_before))
+		self.assertFalse(clock.is_market_open(eleven_secs_before))
 
 	def test_next_market_open(self):
 		new_years_before = datetime.datetime(2014, 1, 1, 8)
