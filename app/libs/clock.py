@@ -39,10 +39,10 @@ class Clock:
 		hour, minute, second = (d.hour, d.minute, d.second)
 		tolerence = 10
 		threshold = 30 - second
-		if hour == 14 and (minute >= 30 or 
+		if hour == self.open_hour(d) and (minute >= 30 or 
 			(minute == 29 and threshold <= tolerence)):
 			return True
-		elif hour > 14 and hour < 21:
+		elif hour > self.open_hour(d) and hour < self.close_hour(d):
 			return True
 
 		return False
@@ -61,7 +61,7 @@ class Clock:
 		if dt is None:
 			dt = datetime.datetime.now()
 
-		if dt.hour < 14 or dt.hour == 14 and dt.minute < 30:
+		if dt.hour < self.open_hour(dt) or dt.hour == self.open_hour(dt) and dt.minute < 30:
 			return True
 
 		return False
@@ -71,12 +71,12 @@ class Clock:
 			dt = datetime.datetime.now()
 
 		if self.is_before_open(dt):
-			market_open = datetime.datetime(dt.year, dt.month, dt.day, 14, 30)
+			market_open = datetime.datetime(dt.year, dt.month, dt.day, self.open_hour(dt), 30)
 			if self.is_market_open(market_open):
 				return market_open
 				
 		dt += timedelta(days=1)
-		dt = datetime.datetime(dt.year, dt.month, dt.day, 14, 30)
+		dt = datetime.datetime(dt.year, dt.month, dt.day, self.open_hour(dt), 30)
 
 		if self.is_market_open(dt):
 			return dt
@@ -91,3 +91,30 @@ class Clock:
 		diff = next_open - dt
 		
 		return diff.total_seconds()
+
+	def dst(self, dt=None):
+		if dt is None:
+			dt = datetime.datetime.now()
+
+		local = timezone('US/Eastern').localize(dt)
+		return local.dst()
+
+	def open_hour(self, dt=None):
+		if dt is None:
+			dt = datetime.datetime.now()
+
+		return self.calc_hour(14, dt)
+
+	def close_hour(self, dt=None):
+		if dt is None:
+			dt = datetime.datetime.now()
+
+		return calc_hour(21, dt)
+
+	def calc_hour(self, hour, dt):
+		offset = str(self.dst(dt)).split(':')[0]
+		return hour - int(offset)
+
+if __name__ == "__main__":
+	clock = Clock()
+	print clock.open_hour(datetime.datetime(2014, 4, 14, 23))

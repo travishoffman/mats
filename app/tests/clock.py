@@ -37,6 +37,7 @@ class ClockTest(unittest.TestCase):
 		market_day_during = datetime.datetime(2014, 1, 27, 16)
 		market_day_close = datetime.datetime(2014, 1, 27, 21)
 		market_day_after = datetime.datetime(2014, 1, 27, 23)
+		dst = datetime.datetime(2014, 4, 14, 23)
 
 		clock = Clock()
 		next = clock.next_market_open(new_years_before)
@@ -61,6 +62,8 @@ class ClockTest(unittest.TestCase):
 		self.assertEquals(next, datetime.datetime(2014, 1, 28, 14, 30))
 		next = clock.next_market_open(market_day_after)
 		self.assertEquals(next, datetime.datetime(2014, 1, 28, 14, 30))
+		next = clock.next_market_open(dst)
+		self.assertEquals(next, datetime.datetime(2014, 4, 15, 13, 30))
 
 	def test_secs_until_open(self):
 		thursday_after = datetime.datetime(2014, 1, 23, 23)
