@@ -87,5 +87,7 @@ class Clock:
 		if dt is None:
 			dt = datetime.datetime.now()
 
-		diff = self.next_market_open(dt) - dt
-		return diff.seconds
+		next_open = self.next_market_open(dt)
+		diff = next_open - dt
+		
+		return diff.total_seconds()

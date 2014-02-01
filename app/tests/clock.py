@@ -61,3 +61,14 @@ class ClockTest(unittest.TestCase):
 		self.assertEquals(next, datetime.datetime(2014, 1, 28, 14, 30))
 		next = clock.next_market_open(market_day_after)
 		self.assertEquals(next, datetime.datetime(2014, 1, 28, 14, 30))
+
+	def test_secs_until_open(self):
+		thursday_after = datetime.datetime(2014, 1, 23, 23)
+		friday_after = datetime.datetime(2014, 1, 24, 23)
+		
+		clock = Clock()
+		secs = clock.secs_until_open(thursday_after)
+		self.assertEquals(secs, 55800) # 15.5 hours
+		secs = clock.secs_until_open(friday_after)
+		self.assertEquals(secs, 228600) # 2 days 15.5 hours
+		
