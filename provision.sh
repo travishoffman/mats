@@ -11,3 +11,5 @@ pip install pymongo
 pip install rauth
 pip install mock
 pip install pytz
+
+mongo localhost:27017/mats /vagrant/mongo_import.js
