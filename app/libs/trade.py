@@ -8,4 +8,4 @@ class Trade(StreamData):
 		self.trades = self.db.trades
 
 	def save(self):
-		self.trades.insert(self._data)
+		return self.trades.insert(self._data)

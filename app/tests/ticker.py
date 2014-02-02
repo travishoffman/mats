@@ -1,6 +1,7 @@
 from libs.ticker import Ticker
 from libs.quote import Quote
 from libs.trade import Trade
+from libs.event import StatusEvent, QuoteEvent, TradeEvent, Event
 from mock import Mock, patch, create_autospec, call
 from multiprocessing import Process, Pipe
 import httplib
@@ -8,23 +9,23 @@ import unittest
 import json
 
 class TickerTest(unittest.TestCase):
-	def test_status_handler(self):
+	@patch('libs.ticker.StatusEvent')
+	def test_status_handler(self, mock_status):
 		parent, child = Pipe()
 		ticker = Ticker(child)
 		ticker.conn = Mock()
 		ticker.conn.send = Mock()
 		ticker.logger.info = Mock()
+		mock_event = StatusEvent(name='connected')
+		mock_status.return_value = mock_event
 		
 		data = {'status': 'connected'}
 		ticker.status_handler(data)
-		ticker.conn.send.assert_called_with(json.dumps({'type': 'event', 'data': 'connected'}))
-
-		data = {'status': 'disconnected'}
-		ticker.status_handler(data)		
-		ticker.conn.send.assert_called_with(json.dumps({'type': 'event', 'data': 'disconnected'}))
+		ticker.conn.send.assert_called_with(mock_event)
 
 	@patch('libs.ticker.Quote')
-	def test_quote_handler(self, mock):
+	@patch('libs.ticker.QuoteEvent')
+	def test_quote_handler(self, quote_event_patch, quote_patch):
 		parent, child = Pipe()
 		ticker = Ticker(child)
 		
@@ -54,20 +55,26 @@ class TickerTest(unittest.TestCase):
 		mock_quote = Quote(data1['quote'])
 		mock_quote.save = Mock(return_value=0)
 		mock_quote.merge = Mock(return_value=0)
-		mock.return_value = mock_quote
+		quote_patch.return_value = mock_quote
+		mock_qevent = QuoteEvent(name='new_quote', object_id='123', symbol='TSLA')
+		quote_event_patch.return_value = mock_qevent
+		ticker.conn = Mock()
+		ticker.conn.send = Mock()
 
 		ticker.quote_handler(data1)
-		self.assertEqual(mock.call_count, 1)
+		self.assertEqual(quote_patch.call_count, 1)
 		self.assertEqual(ticker.tk.get_quotes.call_count, 1)
 		self.assertEqual(mock_quote.merge.call_count, 1)
+		ticker.conn.send.assert_called_with(mock_qevent)
 
 		mock_quote.is_complete = Mock(return_value=True)
 		ticker.quote_handler(data1)
-		self.assertEqual(mock.call_count, 2)
+		self.assertEqual(quote_patch.call_count, 2)
 		self.assertEqual(mock_quote.merge.call_count, 2)
 
 	@patch('libs.ticker.Trade')
-	def test_trade_handler(self, mock):
+	@patch('libs.ticker.TradeEvent')
+	def test_trade_handler(self, trade_event_patch, trade_patch):
 		parent, child = Pipe()
 		ticker = Ticker(child)
 		
@@ -114,19 +121,25 @@ class TickerTest(unittest.TestCase):
 		mock_trade = Trade(data1['trade'])
 		mock_trade.save = Mock(return_value=0)
 		mock_trade.merge = Mock(return_value=0)
-		mock.return_value = mock_trade
+		trade_patch.return_value = mock_trade
+		trade_event = TradeEvent(name='new_trade', object_id='123', symbol='TSLA')
+		trade_event_patch.return_value = trade_event
+		ticker.conn = Mock()
+		ticker.conn.send = Mock()
 
 		ticker.trade_handler(data1)
-		self.assertEqual(mock.call_count, 1)
+		self.assertEqual(trade_patch.call_count, 1)
 		self.assertEqual(ticker.tk.get_quotes.call_count, 1)
 		self.assertEqual(mock_trade.merge.call_count, 1)
+		ticker.conn.send.assert_called_with(trade_event)
 
 		mock_trade.is_complete = Mock(return_value=True)
 		ticker.trade_handler(data1)
-		self.assertEqual(mock.call_count, 2)
+		self.assertEqual(trade_patch.call_count, 2)
 		self.assertEqual(mock_trade.merge.call_count, 2)
 
-	def test_start(self):
+	@patch('libs.ticker.Event')
+	def test_start(self, event_patch):
 		parent, child = Pipe()
 		ticker = Ticker(child)
 		ticker.conn = Mock()
@@ -144,13 +157,23 @@ class TickerTest(unittest.TestCase):
 		ticker.stream.assert_called_with(['AAPL'])
 		self.assertTrue(ticker.sanitize_watchlist.call_count, 1)
 
+		event = Event(name='incomplete_read')
+		event_patch.return_value = event
 		ticker.stream.side_effect = httplib.IncompleteRead('test')
 		ticker.start()
-		ticker.conn.send.assert_called_with(json.dumps({'type': 'error', 'data': 'incomplete_read'}))
-		
-		ticker.clock.is_market_open = Mock(return_value=False)
+		self.assertTrue(ticker.stream.called)
+		self.assertRaises(httplib.IncompleteRead, ticker.stream)
+		ticker.conn.send.assert_called_with(event)
+
+		ticker.stream.reset_mock()
+		event = Event(name='empty_watchlist')
+		event_patch.return_value = event
+		watchlist_data = []
+		ticker.watchlist.get = Mock(return_value=watchlist_data)
 		ticker.start()
-		#ticker.conn.send.assert_called_with(json.dumps({'type': 'info', 'data': 'market_closed'}))
+		ticker.conn.send.assert_called_with(event)
+		self.assertFalse(ticker.stream.called)
+
 
 	def test_sanitize_watchlist(self):
 		parent, child = Pipe()

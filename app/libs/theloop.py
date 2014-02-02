@@ -16,7 +16,6 @@ class TheLoop:
 			'incomplete_read': self.incomplete_read_handler,
 			'ssl_error':  self.ssl_error_handler,
 			'connected': self.connected_handler,
-			'market_closed': self.market_closed_handler,
 			'new_quote': self.new_quote_handler,
 			'new_trade': self.new_trade_handler,
 			'empty_watchlist': self.empty_watchlist_handler
@@ -34,11 +33,11 @@ class TheLoop:
 					pass
 				
 				# now go to sleep
-				self.market_closed_handler()
+				self.go_to_sleep()
 
 			if self.ticker_conn.poll():
-				data = json.loads(self.ticker_conn.recv())
-				self.ticker_handlers[data['data']]()
+				data = self.ticker_conn.recv()
+				self.ticker_handlers[data.name](data)
 
 	def ticker(self, conn):
 		ticker = Ticker(conn)
@@ -51,6 +50,16 @@ class TheLoop:
 		p.start()
 		return (p, parent)
 
+	def analyst(self, conn):
+		pass
+
+	def launch_analyst(self):
+		self.logger.info('theloop: spawning analyst child process')
+		parent, child = Pipe()		
+		p = Process(target=self.analyst, name='analyst', args=(child,))
+		p.start()
+		return (p, parent)
+
 	def incomplete_read_handler(self):
 		self.logger.error('theloop: ticker had incompleteread error, attempting to respawn ticker.')
 		self.ticker_p, self.ticker_conn = self.launch_ticker()
@@ -59,10 +68,10 @@ class TheLoop:
 		self.logger.error('theloop: ticker had ssl_error, attempting to respawn ticker.')
 		self.ticker_p, self.ticker_conn = self.launch_ticker()
 
-	def connected_handler(self):
+	def connected_handler(self, event):
 		self.logger.info('theloop: ticker connected to stream')
 
-	def market_closed_handler(self):
+	def go_to_sleep(self):
 		secs = self.clock.secs_until_open()
 		time_slept = time.time()
 
@@ -75,12 +84,12 @@ class TheLoop:
 
 		self.ticker_p, self.ticker_conn = self.launch_ticker()
 
-	def new_quote_handler(self):
+	def new_quote_handler(self, event):
 		self.logger.debug('theloop: ticker reports new quote')
 
-	def new_trade_handler(self):
+	def new_trade_handler(self, event):
 		self.logger.debug('theloop: ticker reports new trade')
 
-	def empty_watchlist_handler(self):
+	def empty_watchlist_handler(self, event):
 		self.logger.info('theloop: exiting.')
 		exit(0)	

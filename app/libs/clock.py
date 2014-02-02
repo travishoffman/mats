@@ -109,7 +109,7 @@ class Clock:
 		if dt is None:
 			dt = datetime.datetime.now()
 
-		return calc_hour(21, dt)
+		return self.calc_hour(21, dt)
 
 	def calc_hour(self, hour, dt):
 		offset = str(self.dst(dt)).split(':')[0]

@@ -9,4 +9,4 @@ class Quote(StreamData):
 		self.quotes = self.db.quotes
 
 	def save(self):
-		self.quotes.insert(self._data)
+		return self.quotes.insert(self._data)

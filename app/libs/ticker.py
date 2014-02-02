@@ -3,11 +3,11 @@ from quote import Quote
 from trade import Trade
 from tradeking import TradeKing
 from clock import Clock
+from event import TradeEvent, QuoteEvent, StatusEvent, Event
 import sys
 import logging
 import httplib
 import ssl
-import json
 
 class Ticker:
 	def __init__(self, conn):
@@ -31,9 +31,7 @@ class Ticker:
 
 	def status_handler(self, resp):
 		if resp['status'] == 'connected':
-			self.conn.send(json.dumps({'type': 'event', 'data': 'connected'}))
-		else:
-			self.conn.send(json.dumps({'type': 'event', 'data': 'disconnected'}))
+			self.conn.send(StatusEvent(name='connected'))
 
 	def quote_handler(self, resp):
 		symbol = resp['quote']['symbol']
@@ -46,9 +44,9 @@ class Ticker:
 			quote_data = self.tk.get_quotes([symbol])
 			q.merge(quote_data)
 
-		q.save()
+		oid = q.save()
 		self.quotes[symbol] = q
-		self.conn.send(json.dumps({'type': 'event', 'data': 'new_quote'}))
+		self.conn.send(QuoteEvent(name='new_quote', object_id=oid, symbol=symbol))
 
 	def trade_handler(self, resp):
 		symbol = resp['trade']['symbol']
@@ -61,9 +59,9 @@ class Ticker:
 			trade_data = self.tk.get_quotes([symbol])
 			t.merge(trade_data)
 
-		t.save()
+		oid = t.save()
 		self.trades[symbol] = t
-		self.conn.send(json.dumps({'type': 'event', 'data': 'new_trade'}))
+		self.conn.send(TradeEvent(name='new_trade', object_id=oid, symbol=symbol))
 
 	def stream(self, watchlist_lst):
 		for resp in self.tk.get_stream(watchlist_lst):
@@ -77,15 +75,15 @@ class Ticker:
 
 		if len(watchlist_lst) == 0:
 			self.logger.info('ticker: watchlist is empty. exiting.')
-			self.conn.send(json.dumps({'type': 'error', 'data': 'empty_watchlist'}))
+			self.conn.send(Event(name='empty_watchlist'))
 			return
 
 		try:
 			self.stream(watchlist_lst)
 		except httplib.IncompleteRead:
-			self.conn.send(json.dumps({'type': 'error', 'data': 'incomplete_read'}))
+			self.conn.send(Event(name='incomplete_read'))
 		except ssl.SSLError:
-			self.conn.send(json.dumps({'type': 'error', 'data': 'ssl_error'}))
+			self.conn.send(Event(name='ssl_error'))
 
 	def handle_stream_exception(self):
 		self.quotes.clear()
