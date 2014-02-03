@@ -1,6 +1,7 @@
 class Analyst:
-	def __init__(self, conn):
+	def __init__(self, conn, data):
 		self.conn = conn
+		self.data = data
 
 	def start(self):
-		self.conn.send(json.dumps({'type': 'signal', 'data': 'hold'}))
+		pass
