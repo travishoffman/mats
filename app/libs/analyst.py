@@ -3,5 +3,6 @@ class Analyst:
 		self.conn = conn
 		self.data = data
 
-	def start(self):
+	def analyze(self):
 		pass
+		

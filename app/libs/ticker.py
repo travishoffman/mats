@@ -4,10 +4,11 @@ from trade import Trade
 from tradeking import TradeKing
 from clock import Clock
 from event import TradeEvent, QuoteEvent, StatusEvent, Event
-import sys
+import os
 import logging
 import httplib
 import ssl
+import json
 
 class Ticker:
 	def __init__(self, conn):
@@ -17,11 +18,19 @@ class Ticker:
 		self.watchlist = WatchList()
 		self.quotes = {}
 		self.trades = {}
+
+		try:
+			config_f = open('config.json', 'r')
+			conf = json.load(config_f)['tradeking']
+			config_f.close()
+		except:
+			self.logger.error('ticker: config.json is not properly configured')
+
 		self.tk = TradeKing({
-			'consumer_key': 'SmgvD5it3jrAgZ6DyQdB1rPshIDrdakEseWkaQWz',
-			'consumer_secret': 'BLCTEO2O3So2sR1jQJ84u6SiSBWWNGKFgkLTlo1p',
-			'oauth_token': 'DmlnWjGgW5BVWGKUMkkxMCX3UM8SsL7h3MtlqPWJ',
-			'oauth_token_secret': 'DOXRh1D74wVj4F2uL7d6ZfJyh6awjoOP7WRROcTw'
+			'consumer_key': conf['consumer_key'],
+			'consumer_secret': conf['consumer_secret'],
+			'oauth_token': conf['oauth_token'],
+			'oauth_token_secret': conf['oauth_token_secret']
 		})
 		self.handlers = {
 			'status': self.status_handler,
