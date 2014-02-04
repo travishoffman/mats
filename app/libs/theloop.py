@@ -52,7 +52,7 @@ class TheLoop:
 		self.logger.error('theloop: ticker had incompleteread error, attempting to respawn ticker.')
 		self.ticker_p, self.ticker_conn = self.launch_ticker()
 
-	def ssl_error_handler(self):
+	def ssl_error_handler(self, data):
 		self.logger.error('theloop: ticker had ssl_error, attempting to respawn ticker.')
 		self.ticker_p, self.ticker_conn = self.launch_ticker()
 
