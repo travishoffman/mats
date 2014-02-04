@@ -1,10 +1,7 @@
 from ticker import Ticker
 from clock import Clock
-from analyst import Analyst
 from multiprocessing import Process, Pipe
 import logging
-import multiprocessing
-import json
 import time
 
 class TheLoop:
@@ -51,17 +48,6 @@ class TheLoop:
 		p.start()
 		return (p, parent)
 
-	def analyst(self, conn, data):
-		analyst = Analyst(conn, data)
-		analyst.start()
-
-	def launch_analyst(self, data):
-		self.logger.info('theloop: spawning analyst child process')
-		parent, child = Pipe()
-		p = Process(target=self.analyst, name='analyst', args=(child, data))
-		p.start()
-		return (p, parent)
-
 	def incomplete_read_handler(self, data):
 		self.logger.error('theloop: ticker had incompleteread error, attempting to respawn ticker.')
 		self.ticker_p, self.ticker_conn = self.launch_ticker()
@@ -88,11 +74,9 @@ class TheLoop:
 
 	def new_quote_handler(self, event):
 		self.logger.debug('theloop: ticker reports new quote')
-		self.launch_analyst(event)
 
 	def new_trade_handler(self, event):
 		self.logger.debug('theloop: ticker reports new trade')
-		self.launch_analyst(event)
 
 	def empty_watchlist_handler(self, event):
 		self.logger.info('theloop: exiting.')

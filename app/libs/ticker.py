@@ -85,11 +85,6 @@ class Ticker:
 		except ssl.SSLError:
 			self.conn.send(Event(name='ssl_error'))
 
-	def handle_stream_exception(self):
-		self.quotes.clear()
-		self.trades.clear()
-		self.start()
-
 	def sanitize_watchlist(self):
 		self.logger.info('ticker: sanitizing watchlist')
 		
