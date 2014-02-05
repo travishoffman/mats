@@ -93,6 +93,8 @@ class Ticker:
 			self.conn.send(Event(name='incomplete_read'))
 		except ssl.SSLError:
 			self.conn.send(Event(name='ssl_error'))
+		except:
+			self.conn.send(Event(name='unknown_error'))
 
 	def sanitize_watchlist(self):
 		self.logger.info('ticker: sanitizing watchlist')

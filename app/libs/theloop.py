@@ -13,6 +13,7 @@ class TheLoop:
 		self.ticker_handlers = {
 			'incomplete_read': self.incomplete_read_handler,
 			'ssl_error':  self.ssl_error_handler,
+			'unknown_error': self.unknown_error_handler,
 			'connected': self.connected_handler,
 			'new_quote': self.new_quote_handler,
 			'new_trade': self.new_trade_handler,
@@ -32,6 +33,8 @@ class TheLoop:
 				
 				# now go to sleep
 				self.go_to_sleep()
+			elif not self.ticker_p.is_alive():
+				self.ticker_p, self.ticker_conn = self.launch_ticker()
 
 			if self.ticker_conn.poll():
 				data = self.ticker_conn.recv()
@@ -55,6 +58,10 @@ class TheLoop:
 	def ssl_error_handler(self, data):
 		self.logger.error('theloop: ticker had ssl_error, attempting to respawn ticker.')
 		self.ticker_p, self.ticker_conn = self.launch_ticker()
+
+	def unknown_error_handler(self, data):
+		self.logger.error('theloop: ticker had an unknown error, attempting to respawn ticker.')
+		self.ticker_p, self.ticker_conn = self.launch_ticker()		
 
 	def connected_handler(self, event):
 		self.logger.info('theloop: ticker connected to stream')
