@@ -19,12 +19,7 @@ class Ticker:
 		self.quotes = {}
 		self.trades = {}
 
-		try:
-			config_f = open('config.json', 'r')
-			conf = json.load(config_f)['tradeking']
-			config_f.close()
-		except:
-			self.logger.error('ticker: config.json is not properly configured')
+		conf = self.get_config()
 
 		self.tk = TradeKing({
 			'consumer_key': conf['consumer_key'],
@@ -37,6 +32,16 @@ class Ticker:
 			'quote': self.quote_handler,
 			'trade': self.trade_handler
 		}
+
+	def get_config(self):
+		try:
+			config_f = open('config.json', 'r')
+			conf = json.load(config_f)['tradeking']
+			config_f.close()
+			return conf
+		except:
+			self.logger.error('ticker: config.json is not properly configured')		
+			return False
 
 	def status_handler(self, resp):
 		if resp['status'] == 'connected':

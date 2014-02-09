@@ -10,7 +10,8 @@ import json
 
 class TickerTest(unittest.TestCase):
 	@patch('libs.ticker.StatusEvent')
-	def test_status_handler(self, mock_status):
+	@patch.object(Ticker, 'get_config')
+	def test_status_handler(self, mock_conf, mock_status):
 		parent, child = Pipe()
 		ticker = Ticker(child)
 		ticker.conn = Mock()
@@ -18,6 +19,7 @@ class TickerTest(unittest.TestCase):
 		ticker.logger.info = Mock()
 		mock_event = StatusEvent(name='connected')
 		mock_status.return_value = mock_event
+		mock_conf.return_value = { 'consumer_key': 'blah'}
 		
 		data = {'status': 'connected'}
 		ticker.status_handler(data)
@@ -25,9 +27,11 @@ class TickerTest(unittest.TestCase):
 
 	@patch('libs.ticker.Quote')
 	@patch('libs.ticker.QuoteEvent')
-	def test_quote_handler(self, quote_event_patch, quote_patch):
+	@patch.object(Ticker, 'get_config')
+	def test_quote_handler(self, mock_conf, quote_event_patch, quote_patch):
 		parent, child = Pipe()
 		ticker = Ticker(child)
+		mock_conf.return_value = { 'consumer_key': 'blah'}
 		
 		data1 = {
 			'quote': {
@@ -74,10 +78,12 @@ class TickerTest(unittest.TestCase):
 
 	@patch('libs.ticker.Trade')
 	@patch('libs.ticker.TradeEvent')
-	def test_trade_handler(self, trade_event_patch, trade_patch):
+	@patch.object(Ticker, 'get_config')
+	def test_trade_handler(self, mock_conf, trade_event_patch, trade_patch):
 		parent, child = Pipe()
 		ticker = Ticker(child)
-		
+		mock_conf.return_value = { 'consumer_key': 'blah'}
+
 		data1 = {
 			u'trade': {
 				u'last': u'539.819',
@@ -139,9 +145,12 @@ class TickerTest(unittest.TestCase):
 		self.assertEqual(mock_trade.merge.call_count, 2)
 
 	@patch('libs.ticker.Event')
-	def test_start(self, event_patch):
+	@patch.object(Ticker, 'get_config')
+	def test_start(self, mock_conf, event_patch):
 		parent, child = Pipe()
 		ticker = Ticker(child)
+		mock_conf.return_value = { 'consumer_key': 'blah'}
+
 		ticker.conn = Mock()
 		ticker.conn.send = Mock()
 		ticker.logger = Mock()
@@ -174,10 +183,11 @@ class TickerTest(unittest.TestCase):
 		ticker.conn.send.assert_called_with(event)
 		self.assertFalse(ticker.stream.called)
 
-
-	def test_sanitize_watchlist(self):
+	@patch.object(Ticker, 'get_config')
+	def test_sanitize_watchlist(self, mock_conf):
 		parent, child = Pipe()
 		ticker = Ticker(child)
+		mock_conf.return_value = { 'consumer_key': 'blah'}
 		
 		ticker.logger.info = Mock()
 		watchlist_data = [

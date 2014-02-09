@@ -40,3 +40,12 @@ class TheLoopTest(unittest.TestCase):
 		ticker_conn.recv = Mock(return_value=TradeEvent(name='new_trade', object_id='abc123', symbol='AAPL'))
 		theloop.loop_iter()
 		theloop.new_trade_handler.assert_called_once()
+
+		theloop.clock.is_market_open = Mock(return_value=True)
+		theloop.ticker_p.terminate = Mock(return_value=True)
+		theloop.ticker_p.is_alive = Mock(return_value=False)
+		theloop.go_to_sleep = Mock(return_value=True)
+		theloop.loop_iter()
+		theloop.ticker_p.terminate.assert_called_once()
+		theloop.ticker_p.is_alive.assert_called_once()
+		theloop.go_to_sleep.assert_called_once()
