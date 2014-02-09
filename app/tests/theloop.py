@@ -1,15 +1,14 @@
 from libs.theloop import TheLoop
+from libs.event import Event, QuoteEvent, StatusEvent, TradeEvent
 from mock import Mock, patch, call
-from helpers.errorafter import ErrorAfter
 import unittest
 import json
 
 class TheLoopTest(unittest.TestCase):
-	def test_loop(self):
+	def test_loop_iter(self):
 		theloop = TheLoop()
 		ticker_conn = Mock()
 		ticker_conn.poll = Mock(return_value=True)
-		ticker_conn.poll.side_effect = ErrorAfter(2)
 
 		theloop.clock.is_market_open = Mock(return_value=True)
 		theloop.connected_handler = Mock(return_value=True)
@@ -18,24 +17,26 @@ class TheLoopTest(unittest.TestCase):
 		theloop.new_quote_handler = Mock(return_value=True)
 		theloop.incomplete_read_handler = Mock(return_value=True)
 		theloop.ssl_error_handler = Mock(return_value=True)
-		
-		with self.assertRaises(Exception):
-			ticker_conn.recv = Mock(return_value={'type': 'event', 'data': 'connected'})
-			theloop.loop()
-			theloop.connected_handler.assert_called_once()
-			
-			ticker_conn.recv = Mock(return_value=json.dumps({'type': 'error', 'data': 'ssl_error'}))
-			theloop.loop()
-			theloop.ssl_error_handler.assert_called_once()
-			
-			ticker_conn.recv = Mock(return_value=json.dumps({'type': 'error', 'data': 'incomplete_read'}))
-			theloop.loop()
-			theloop.incomplete_read_handler.assert_called_once()
+		theloop.ticker_p = Mock(return_value=True)
+		theloop.ticker_conn = Mock(return_value=True)
+		theloop.logger = Mock(return_value=True)
 
-			ticker_conn.recv = Mock(return_value=json.dumps({'type': 'event', 'data': 'new_quote'}))
-			theloop.loop()
-			theloop.new_quote_handler.assert_called_once()
+		theloop.ticker_conn.recv = Mock(return_value=StatusEvent(name='connected'))
+		theloop.loop_iter()
+		theloop.connected_handler.assert_called_once()
+			
+		theloop.ticker_conn.recv = Mock(return_value=Event(name='ssl_error'))
+		theloop.loop_iter()
+		theloop.ssl_error_handler.assert_called_once()
+			
+		theloop.ticker_conn.recv = Mock(return_value=Event(name='incomplete_read'))
+		theloop.loop_iter()
+		theloop.incomplete_read_handler.assert_called_once()
 
-			ticker_conn.recv = Mock(return_value=json.dumps({'type': 'event', 'data': 'new_trade'}))
-			theloop.loop()
-			theloop.new_trade_handler.assert_called_with('meow')
+		theloop.ticker_conn.recv = Mock(return_value=QuoteEvent(name='new_quote', object_id='abc123', symbol='AAPL'))
+		theloop.loop_iter()
+		theloop.new_quote_handler.assert_called_once()
+
+		ticker_conn.recv = Mock(return_value=TradeEvent(name='new_trade', object_id='abc123', symbol='AAPL'))
+		theloop.loop_iter()
+		theloop.new_trade_handler.assert_called_once()

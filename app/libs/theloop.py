@@ -23,22 +23,25 @@ class TheLoop:
 	def loop(self):
 		self.ticker_p, self.ticker_conn = self.launch_ticker()
 		while True:
-			if not self.clock.is_market_open():
-				self.logger.info('theloop: market is closed. killing ticker.')
-				self.ticker_p.terminate()
-				
-				# block until ticker child has time to exit
-				while self.ticker_p.is_alive():
-					pass
-				
-				# now go to sleep
-				self.go_to_sleep()
-			elif not self.ticker_p.is_alive():
-				self.ticker_p, self.ticker_conn = self.launch_ticker()
+			self.loop_iter()
+		
+	def loop_iter(self):
+		if not self.clock.is_market_open():
+			self.logger.info('theloop: market is closed. killing ticker.')
+			self.ticker_p.terminate()
+			
+			# block until ticker child has time to exit
+			while self.ticker_p.is_alive():
+				pass
+			
+			# now go to sleep
+			self.go_to_sleep()
+		elif not self.ticker_p.is_alive():
+			self.ticker_p, self.ticker_conn = self.launch_ticker()
 
-			if self.ticker_conn.poll():
-				data = self.ticker_conn.recv()
-				self.ticker_handlers[data.name](data)
+		if self.ticker_conn.poll():
+			data = self.ticker_conn.recv()
+			self.ticker_handlers[data.name](data)
 
 	def ticker(self, conn):
 		ticker = Ticker(conn)
